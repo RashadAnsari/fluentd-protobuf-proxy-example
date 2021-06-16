@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option go_package = "proto";
+
+package hello_world;
+
+message SayHello {
+  string name = 1;
+}

@@ -1,0 +1,44 @@
+version: '3.2'
+services:
+
+  fluentd:
+    image: bitnami/fluentd:1.13.0
+    hostname: fluentd
+    container_name: fluentd
+    ports:
+      - 8080:8080
+    volumes:
+      - ./fluentd.conf:/opt/bitnami/fluentd/conf/fluentd.conf
+      - ./fluentd_protos:/protos
+    depends_on:
+      - kafka
+    # FIXME: After creating Dockerfile with below commands we should delete user line
+    user: root
+    # FIXME: Create a Dockerfile using below commands
+    command: >
+      bash -c "fluent-gem install fluent-plugin-protobuf-http
+      && apt-get update && apt-get install -y protobuf-compiler
+      && /opt/bitnami/scripts/fluentd/run.sh"
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    hostname: zookeeper
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: bitnami/kafka:latest
+    hostname: kafka
+    container_name: kafka
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+    ports:
+      - 9093:9093
